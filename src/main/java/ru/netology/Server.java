@@ -6,27 +6,31 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
 public class Server {
     private final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html", "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
-    private final int PORT = 9999;
     private final ExecutorService executor;
-    private final ServerSocket serverSocket;
+    private ServerSocket serverSocket;
+
+    private Map<String, Map<String,Handler>> handlers = new ConcurrentHashMap<>();
 
     public Server() {
-        try {
-            serverSocket = new ServerSocket(PORT);
             executor = newFixedThreadPool(64);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    public void start() {
+    public void listen(int port) {
+        try {
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         while (true) {
             try {
                 final var socket = serverSocket.accept();
@@ -36,7 +40,6 @@ public class Server {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
     }
 
@@ -105,23 +108,40 @@ public class Server {
                     break;
                 }
                 final var parts = requestLine.split(" ");
-
                 if (parts.length != 3) {
                     // just close socket
                     break;
                 }
+                Request request = new Request(parts[0], parts[1], parts[2]);
 
-                final var path = parts[1];
-                if (!validPaths.contains(path)) {
+                while (in.ready()){
+                    String line = in.readLine();
+                    if (line.equals("\r\n")){
+                        break;
+                    }
+                    request.appendTitles(line);
+                }
+
+                while (in.ready()){
+                    String line = in.readLine();
+                    request.appendBody(line);
+                }
+
+                if ((!(handlers.containsKey(request.getRequestMethod()))) || (!(handlers.get(request.getRequestMethod()).containsKey(request.getPath())))){
                     notFoundError404(out);
                     break;
                 }
+//                final var path = parts[1];
+//                if (!validPaths.contains(path)) {
+//                    notFoundError404(out);
+//                    break;
+//                }
 
-                final var filePath = Path.of(".", "public", path);
+                final var filePath = Path.of(".", "public", request.getPath());
                 final var mimeType = Files.probeContentType(filePath);
 
                 // special case for classic
-                if (path.equals("/classic.html")) {
+                if (request.getPath().equals("/classic.html")) {
                     classicPathWithTime(filePath, out, mimeType);
                     break;
                 }
@@ -130,5 +150,21 @@ public class Server {
         } catch (IOException e){
             e.printStackTrace();
         }
+    }
+
+    public void addHandler(String requestMethod, String path, Handler handler) {
+        if (handlers.containsKey(requestMethod)){
+            handlers.get(requestMethod).put(path,handler);
+        } else {
+            handlers.put(requestMethod, new ConcurrentHashMap<>());
+            handlers.get(requestMethod).put(path, handler);
+        }
+
+//        if (handlers.get(requestMethod)!=null){
+//            handlers.get(requestMethod).put(path,handler);
+//        } else {
+//            handlers.put(requestMethod, new HashMap<>());
+//            handlers.get(requestMethod).put(path, handler);
+//        }
     }
 }
