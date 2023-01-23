@@ -6,8 +6,6 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -15,7 +13,6 @@ import java.util.concurrent.ExecutorService;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
 public class Server {
-    private final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html", "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
     private final ExecutorService executor;
     private ServerSocket serverSocket;
 
@@ -43,7 +40,7 @@ public class Server {
         }
     }
 
-    private static void notFoundError404(OutputStream out) {
+    public static void notFoundError404(BufferedOutputStream out) {
         try {
             out.write((
                     "HTTP/1.1 404 Not Found\r\n" +
@@ -57,7 +54,10 @@ public class Server {
         }
     }
 
-    private static void classicPathWithTime(Path filePath, OutputStream out, String mimeType) {
+    public static void classicPathWithTime(Request request, BufferedOutputStream out) throws IOException {
+        final var filePath = Path.of(".", "public", request.getPath());
+        final var mimeType = Files.probeContentType(filePath);
+
         try {
             final var template = Files.readString(filePath);
             final var content = template.replace(
@@ -78,7 +78,10 @@ public class Server {
         }
     }
 
-    private static void successOk200(Path filePath, OutputStream out, String mimeType) {
+    public static void successOk200(Request request, BufferedOutputStream out) throws IOException {
+        final var filePath = Path.of(".", "public", request.getPath());
+        final var mimeType = Files.probeContentType(filePath);
+
         try {
             final var length = Files.size(filePath);
             out.write((
@@ -127,25 +130,12 @@ public class Server {
                     request.appendBody(line);
                 }
 
-                if ((!(handlers.containsKey(request.getRequestMethod()))) || (!(handlers.get(request.getRequestMethod()).containsKey(request.getPath())))){
+                if ((!(handlers.containsKey(request.getRequestMethod()))) && (!(handlers.get(request.getRequestMethod()).containsKey(request.getPath())))){
                     notFoundError404(out);
                     break;
+                } else {
+                    handlers.get(request.getRequestMethod()).get(request.getPath()).handle(request, out);
                 }
-//                final var path = parts[1];
-//                if (!validPaths.contains(path)) {
-//                    notFoundError404(out);
-//                    break;
-//                }
-
-                final var filePath = Path.of(".", "public", request.getPath());
-                final var mimeType = Files.probeContentType(filePath);
-
-                // special case for classic
-                if (request.getPath().equals("/classic.html")) {
-                    classicPathWithTime(filePath, out, mimeType);
-                    break;
-                }
-                successOk200(filePath, out, mimeType);
             }
         } catch (IOException e){
             e.printStackTrace();
@@ -159,12 +149,5 @@ public class Server {
             handlers.put(requestMethod, new ConcurrentHashMap<>());
             handlers.get(requestMethod).put(path, handler);
         }
-
-//        if (handlers.get(requestMethod)!=null){
-//            handlers.get(requestMethod).put(path,handler);
-//        } else {
-//            handlers.put(requestMethod, new HashMap<>());
-//            handlers.get(requestMethod).put(path, handler);
-//        }
     }
 }

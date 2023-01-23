@@ -9,17 +9,20 @@ public class Main {
     // код инициализации сервера (из вашего предыдущего ДЗ)
 
     // добавление handler'ов (обработчиков)
-    server.addHandler("GET", "/events.html", (request, responseStream) -> {
-      // TODO: handlers code
+    server.addHandler("GET", "/classic.html", (request, responseStream) -> {
+      try {
+        Server.classicPathWithTime(request, responseStream);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    });
 
+    server.addHandler("GET", "/asdfasdfdsafdsa", (request, responseStream) -> {
+      Server.notFoundError404(responseStream);
     });
-    server.addHandler("GET", "/events.js", (request, responseStream) -> {
-      // TODO: handlers code
-
-    });
-    server.addHandler("POST", "/messages", (request, responseStream) -> {
-      // TODO: handlers code
-    });
+//    server.addHandler("POST", "/messages", (request, responseStream) -> {
+//      // TODO: handlers code
+//    });
 
     server.listen(9999);
   }
