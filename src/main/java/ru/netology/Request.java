@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Request {
-    // read only request line for simplicity
-    // must be in form GET /path HTTP/1.1
     private String requestMethod;
     private String fullPath;
     private String path;
@@ -65,25 +63,10 @@ public class Request {
     }
 
     public static void showInfo(Request request){
-        System.out.println("----------------------------------------------");
-        System.out.println("МЕТОД");
-        System.out.println(request.getRequestMethod());
-        System.out.println("----------------------------------------------");
-        System.out.println("ПОЛНЫЙ ПУТЬ С ПАРАМЕТРАМИ");
-        System.out.println(request.getFullPath());
-        System.out.println("----------------------------------------------");
-        System.out.println("ПУТЬ");
-        System.out.println(request.getPath());
-        System.out.println("----------------------------------------------");
-        System.out.println("ВЕРСИЯ ПРОТОКОЛА");
-        System.out.println(request.getHttpVersion());
-        System.out.println("----------------------------------------------");
-        System.out.println("ЗАГОЛОВКИ");
-        System.out.println(request.getTitles());
-        System.out.println("----------------------------------------------");
-        System.out.println("ПАРАМЕТРЫ");
-        for (Map.Entry entry : request.getQueryParams().entrySet()) {
-            System.out.println(entry.getKey() + "=" + entry.getValue());
-        }
+        System.out.printf("МЕТОД: %s\nПОЛНЫЙ ПУТЬ: %s\nПУТЬ: %s\nВЕРСИЯ ПРОТОКОЛА: %s\nЗАГОЛОВКИ: %s\n",
+                request.getRequestMethod(), request.getFullPath(), request.getPath(), request.getHttpVersion(), request.getTitles());
+
+        System.out.println("ПАРАМЕТРЫ:");
+        request.getQueryParams().entrySet().forEach(System.out::println);
     }
 }
