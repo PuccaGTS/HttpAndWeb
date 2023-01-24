@@ -1,9 +1,6 @@
 package ru.netology;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.sql.SQLOutput;
-import java.util.Map;
 
 public class Main {
   public static void main(String[] args) {
@@ -11,10 +8,11 @@ public class Main {
     // код инициализации сервера (из вашего предыдущего ДЗ)
     //"/classic.html?value1=val&value2=val2&image=img.png&Значение1=6578"
     // добавление handler'ов (обработчиков)
-    server.addHandler("GET", "/events.html", (request, responseStream) -> {
+
+    server.addHandler("POST", "/events.html", (request, responseStream) -> {
       Request.showInfo(request);
       try {
-        Server.classicPathWithTime(request, responseStream);
+        Server.successOk200(request, responseStream);
       } catch (IOException e) {
         e.printStackTrace();
       }
