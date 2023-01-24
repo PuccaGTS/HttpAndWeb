@@ -107,6 +107,7 @@ public class Server {
         ) {
             while (true) {
                 final var requestLine = in.readLine();
+
                 if (requestLine == null) {
                     break;
                 }
@@ -115,20 +116,26 @@ public class Server {
                     // just close socket
                     break;
                 }
-                Request request = new Request(parts[0], parts[1], parts[2]);
+                String requestMethod = parts[0];
+                String fullPath = parts[1];
+                String httpVersion = parts[2];
+                StringBuilder titles = new StringBuilder("");
+                StringBuilder body = new StringBuilder("");
 
                 while (in.ready()){
                     String line = in.readLine();
                     if (line.equals("\r\n")){
                         break;
                     }
-                    request.appendTitles(line);
+                    titles.append(line);
                 }
 
                 while (in.ready()){
                     String line = in.readLine();
-                    request.appendBody(line);
+                    body.append(line);
                 }
+
+                Request request = new Request(requestMethod, fullPath, httpVersion, titles.toString(), body.toString());
 
                 if ((!(handlers.containsKey(request.getRequestMethod()))) && (!(handlers.get(request.getRequestMethod()).containsKey(request.getPath())))){
                     notFoundError404(out);
